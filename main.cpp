@@ -46,9 +46,13 @@ int main(int argc, char** argv) {
     int mode = MODE_NORMAL; // Default mode
     string filePath;
 
+    int width = 150;
+    int height = 50;
+
+
     // Parse command-line arguments
     int option;
-    while ((option = getopt(argc, argv, "m:f:")) != -1) {
+    while ((option = getopt(argc, argv, "m:f:s:h")) != -1) {
         switch (option) {
             case 'm':
                 if (strcmp(optarg, "NORMAL") == 0) {
@@ -73,10 +77,26 @@ int main(int argc, char** argv) {
             case 'f':
                 filePath = optarg;
                 break;
-            case 'h' :
-                cout << "-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
-                cout << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
-                cout << "-h Shows you this list of commands" << endl;
+            case 's':
+                if (strcmp(optarg, "16:9") == 0){
+                    width = 16*8;
+                    height = 9*5;
+                }
+            else if (strcmp(optarg, "1:1") == 0){
+                width = 80;
+                height = 50;
+            }
+            else{
+                width = 150;
+                height = 50;
+            }
+    break; // Add break statement here to prevent falling through to the next case
+
+case 'h':
+    cout << "-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
+    cout << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
+    cout << "-h Shows you this list of commands" << endl;
+    return 0;
             default:
                 cerr <<"-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
                 cerr << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
@@ -104,9 +124,6 @@ int main(int argc, char** argv) {
 
     double fps = cap.get(cv::CAP_PROP_FPS);
     double frame_duration_ms = 1000 / fps;
-
-    int width = 150;
-    int height = 50;
 
     Mat frame, gray_frame, resized_frame;
 
