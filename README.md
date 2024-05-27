@@ -18,6 +18,6 @@ Usage
    - 4:3
    - 1:1
 
--d             Enables discord mode. In discord mode there will be a file generated called "out.txt". This file contains Unicode charchters instead of Ascii charachters, so they won't interfere with discord's special charachters (*, _, ....)
+-d <true/false>            !MAKE SURE TO SET THIS TO TRUE! Enables discord mode. In discord mode there will be a file generated called "out.txt". This file contains Unicode charchters instead of Ascii charachters, so they won't interfere with discord's special charachters (*, _, ....)
 
 -h             A (not yet) useful list of commands
