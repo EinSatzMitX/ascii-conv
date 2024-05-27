@@ -58,6 +58,7 @@ wstring pixelToAscii(int pixel_intensity, int mode) {
 int main(int argc, char** argv) {
     int mode = MODE_NORMAL;
     int DISCORD_MODE = 0;
+    string FORMAT = "    ";
 
     string filePath;
 
@@ -96,13 +97,21 @@ int main(int argc, char** argv) {
                 break;
             case 's':
                 if (strcmp(optarg, "16:9") == 0){
-                    width = 16*8;
+                    FORMAT = "16:9";
+                    width = 16 * 8;
                     height = 9*5;
                 }
                 else if (strcmp(optarg, "1:1") == 0){
+                    FORMAT = "1:1 ";
                     width = 80;
                     height = 50;
                 }
+                else if (strcmp(optarg, "4:3") == 0){
+                    FORMAT = "4:3 ";
+                    width = 128;
+                    height = 60;
+                }
+                // This will be changed again if '-d true' is set
                 else{
                     width = 150;
                     height = 50;
@@ -113,10 +122,21 @@ int main(int argc, char** argv) {
                 if (strcmp(optarg, "true") == 0){
                     if(getFileExtension(filePath) == ".jpg" ||
                         getFileExtension(filePath) == ".jpeg" ||
-                        getFileExtension(filePath) == ".png" ){
+                        getFileExtension(filePath) == ".png" ||
+                        getFileExtension(filePath) == ".webp"){
                             DISCORD_MODE = 1;
-                            width = 7 * 8;
-                            height = 5 * 8;
+                            if (FORMAT == "16:9"){
+                                width = 73;
+                                height = 26;
+                            }
+                            else if(FORMAT == "4:3 "){
+                                width = 8 * 8;
+                                height = 6 * 5;
+                            }
+                            else{
+                                width = 8 * 8;
+                                height = 5 * 8;
+                            }
                             mode = MODE_UNICODE;
                     }
                     else{
@@ -161,7 +181,7 @@ int main(int argc, char** argv) {
 
         wstring ascii_image;
         for (int i = 0; i < height; i++) {
-            ascii_image += L"|";
+            //ascii_image += L"|"; // not needed anymore
             for (int j = 0; j < width; j++)
             {
                 uchar pixel_value = image.at<uchar>(i, j);
@@ -173,7 +193,7 @@ int main(int argc, char** argv) {
         output_file.open("out.txt");
         output_file << ascii_image; // Write the ASCII art to the file
         output_file.close(); // Close the output file#
-        wcout << ascii_image << endl;
+        //wcout << ascii_image << endl; //This will only display question marks anyways
     }
     else
     {
@@ -207,7 +227,7 @@ int main(int argc, char** argv) {
             }
 
             system("clear");
-            wcout << ascii_frame;
+            wcout << ascii_frame; // We could technically set tis to cout, but naahhh
             this_thread::sleep_for(chrono::milliseconds(static_cast<int>(frame_duration_ms)));
         }
 

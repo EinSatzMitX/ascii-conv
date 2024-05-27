@@ -13,7 +13,7 @@ Usage
 
 -f <file name> This is necessary for operation
 
--s <format>    This allows the user to choose between different formats. If left blank the Ascii-Art will be 50 lines tall with 150 charachters per line.
+-s <format>    This allows the user to choose between different formats. If left blank the Ascii-Art will be 50 lines tall with 150 charachters per line (16,25:10). Size will be less if use with '-d true' so tht it fits into the 200 charachter buffer for discord messages.
    - 16:9      
    - 4:3
    - 1:1
