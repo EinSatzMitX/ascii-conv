@@ -3,6 +3,9 @@
 #include <chrono>
 #include <thread>
 #include <getopt.h> // Include getopt.h for command-line argument parsing
+#include <fstream>
+#include <locale>
+#include <codecvt> // Include codecvt for UTF-8 conversion
 
 using namespace std;
 using namespace cv;
@@ -13,46 +16,60 @@ using namespace cv;
 #define MODE_BINARY 2
 #define MODE_UNICODE 3
 
-string pixelToAscii(int pixel_intensity, int mode) {
-    string s = "";
 
-    const string ASCII_CHARS_INVERTED = " .:-=+*#%@";
-    const string ASCII_CHARS_NORMAL = "@&%#*+=-:,. ";
-    const string ASCII_CHARS_LOW_CONTRAST = "@#W$9876543210?!abc;:+=-,._ ";
-    const string ASCII_CHARS_BINARY = "@ ";
-    const string UNICODE_CHARS = "█▓▒░ ";
+std::string getFileExtension(const std::string& filePath) {
+    size_t dotPos = filePath.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        return filePath.substr(dotPos);
+    }
+    return ""; // No extension found
+}
+
+
+wstring pixelToAscii(int pixel_intensity, int mode) {
+    wstring s = L"";
+
+    const wstring ASCII_CHARS_INVERTED = L" .:-=+*#%@";
+    const wstring ASCII_CHARS_NORMAL = L"@&%#*+=-:,. ";
+    const wstring ASCII_CHARS_LOW_CONTRAST = L"@#W$9876543210?!abc;:+=-,._ ";
+    const wstring ASCII_CHARS_BINARY = L"@ ";
+    const wstring UNICODE_CHARS = L"█▓▒░";
     switch (mode)
     {
     case -1:
-        s = string(1, ASCII_CHARS_INVERTED[pixel_intensity * ASCII_CHARS_INVERTED.length() / 256]);
+        s = wstring(1, ASCII_CHARS_INVERTED[pixel_intensity * ASCII_CHARS_INVERTED.length() / 256]);
         break;
     case 1:
-        s = string(1, ASCII_CHARS_LOW_CONTRAST[pixel_intensity * ASCII_CHARS_LOW_CONTRAST.length() / 256]);
+        s = wstring(1, ASCII_CHARS_LOW_CONTRAST[pixel_intensity * ASCII_CHARS_LOW_CONTRAST.length() / 256]);
         break;
     case 2:
-        s = string(1, ASCII_CHARS_BINARY[pixel_intensity * ASCII_CHARS_BINARY.length() / 256]);
+        s = wstring(1, ASCII_CHARS_BINARY[pixel_intensity * ASCII_CHARS_BINARY.length() / 256]);
         break;
     case 3:
-        s = string(1, UNICODE_CHARS[pixel_intensity * UNICODE_CHARS.length() / 256]);
+        s = wstring(1, UNICODE_CHARS[pixel_intensity * UNICODE_CHARS.length() / 256]);
         break;
     default:
-        s = string(1, ASCII_CHARS_NORMAL[pixel_intensity * ASCII_CHARS_NORMAL.length() / 256]);
+        s = wstring(1, ASCII_CHARS_NORMAL[pixel_intensity * ASCII_CHARS_NORMAL.length() / 256]);
         break;
     }
     return s;
 }
 
 int main(int argc, char** argv) {
-    int mode = MODE_NORMAL; // Default mode
+    int mode = MODE_NORMAL;
+    int DISCORD_MODE = 0;
+
     string filePath;
+
+    wofstream output_file;
+    output_file.imbue(locale(output_file.getloc(), new codecvt_utf8<wchar_t>)); // Enable UTF-8 encoding
+    string outputFilePath = "output.txt"; // Default output file name
 
     int width = 150;
     int height = 50;
 
-
-    // Parse command-line arguments
     int option;
-    while ((option = getopt(argc, argv, "m:f:s:h")) != -1) {
+    while ((option = getopt(argc, argv, "m:f:s:d:h")) != -1) {
         switch (option) {
             case 'm':
                 if (strcmp(optarg, "NORMAL") == 0) {
@@ -82,21 +99,39 @@ int main(int argc, char** argv) {
                     width = 16*8;
                     height = 9*5;
                 }
-            else if (strcmp(optarg, "1:1") == 0){
-                width = 80;
-                height = 50;
-            }
-            else{
-                width = 150;
-                height = 50;
-            }
-    break; // Add break statement here to prevent falling through to the next case
+                else if (strcmp(optarg, "1:1") == 0){
+                    width = 80;
+                    height = 50;
+                }
+                else{
+                    width = 150;
+                    height = 50;
+                }
+                break; // Add break statement here to prevent falling through to the next case
 
-case 'h':
-    cout << "-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
-    cout << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
-    cout << "-h Shows you this list of commands" << endl;
-    return 0;
+            case 'd' :
+                if (strcmp(optarg, "true") == 0){
+                    if(getFileExtension(filePath) == ".jpg" ||
+                        getFileExtension(filePath) == ".jpeg" ||
+                        getFileExtension(filePath) == ".png" ){
+                            DISCORD_MODE = 1;
+                            width = 7 * 8;
+                            height = 5 * 8;
+                            mode = MODE_UNICODE;
+                    }
+                    else{
+                        cout << "Please give a parameter <true/false>" << endl;
+                        cout << getFileExtension(filePath) << endl;
+                        return -1;
+                    }
+                }
+
+                break;
+            case 'h':
+                cout << "-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
+                cout << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
+                cout << "-h Shows you this list of commands" << endl;
+                return 0;
             default:
                 cerr <<"-m <NORMAL|INVERTED|LOW_CONTRAST|BINARY|UNICODE>     -OPTIONAL- Set a Mode for your video or image. Will be NORMAL, if nothing else is set" << endl;
                 cerr << "-f <file>                                            -NECESSARY- Insert file to convert into ascii" << endl;
@@ -114,39 +149,68 @@ case 'h':
         return -1;
     }
 
-    cout << "File path: " << filePath << endl;
-
-    VideoCapture cap(filePath);
-    if (!cap.isOpened()) {
-        cerr << "Error opening video file: " << filePath << endl;
-        return -1;
-    }
-
-    double fps = cap.get(cv::CAP_PROP_FPS);
-    double frame_duration_ms = 1000 / fps;
-
-    Mat frame, gray_frame, resized_frame;
-
-    while (true) {
-        cap >> frame;
-        if (frame.empty())
-            break;
-
-        cvtColor(frame, gray_frame, COLOR_BGR2GRAY);
-        resize(gray_frame, resized_frame, Size(width, height), 0, 0, INTER_CUBIC);
-
-        string ascii_frame;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                uchar pixel_value = resized_frame.at<uchar>(i, j);
-                ascii_frame += pixelToAscii(pixel_value, mode);
-            }
-            ascii_frame += "\n";
+    if (DISCORD_MODE){
+        Mat image = imread(filePath);
+        if (image.empty()) {
+            cerr << "Error opening image file: " << filePath << endl;
+            return -1;
         }
 
-        system("clear");
-        cout << ascii_frame;
-        this_thread::sleep_for(chrono::milliseconds(static_cast<int>(frame_duration_ms)));
+        cvtColor(image, image, COLOR_BGR2GRAY);
+        resize(image, image, Size(width, height), 0, 0, INTER_CUBIC);
+
+        wstring ascii_image;
+        for (int i = 0; i < height; i++) {
+            ascii_image += L"|";
+            for (int j = 0; j < width; j++)
+            {
+                uchar pixel_value = image.at<uchar>(i, j);
+                ascii_image += pixelToAscii(pixel_value, mode);
+            }
+            ascii_image += L"\n";
+        }
+
+        output_file.open("out.txt");
+        output_file << ascii_image; // Write the ASCII art to the file
+        output_file.close(); // Close the output file#
+        wcout << ascii_image << endl;
+    }
+    else
+    {
+
+        VideoCapture cap(filePath);
+        if (!cap.isOpened()) {
+            cerr << "Error opening video file: " << filePath << endl;
+            return -1;
+        }
+
+        double fps = cap.get(cv::CAP_PROP_FPS);
+        double frame_duration_ms = 1000 / fps;
+
+        Mat frame, gray_frame, resized_frame;
+
+        while (true) {
+            cap >> frame;
+            if (frame.empty())
+                break;
+
+            cvtColor(frame, gray_frame, COLOR_BGR2GRAY);
+            resize(gray_frame, resized_frame, Size(width, height), 0, 0, INTER_CUBIC);
+
+            wstring ascii_frame;
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
+                    uchar pixel_value = resized_frame.at<uchar>(i, j);
+                    ascii_frame += pixelToAscii(pixel_value, mode);
+                }
+                ascii_frame += L"\n";
+            }
+
+            system("clear");
+            wcout << ascii_frame;
+            this_thread::sleep_for(chrono::milliseconds(static_cast<int>(frame_duration_ms)));
+        }
+
     }
 
     return 0;
